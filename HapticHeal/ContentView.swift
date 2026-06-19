@@ -22,8 +22,8 @@ struct ContentView: View {
     
     var body: some View {
         ZStack {
-            // Absolute Pitch Black background to prevent overstimulation
-            Color.black
+            // Dynamic Fluid Background Canvas to minimize visual overstimulation
+            FluidBackgroundView()
                 .ignoresSafeArea()
             
             VStack(spacing: 40) {
@@ -78,19 +78,61 @@ struct ContentView: View {
                 
                 // Center Pulse Area
                 ZStack {
-                    // Outer Pulsing Glow Rings (Visible only when active)
+                    // Active Haptic Mode Visual Rings (centered exactly on the button)
                     if connector.isActive {
-                        Circle()
-                            .stroke(limeGreen.opacity(0.10), lineWidth: 40)
-                            .scaleEffect(pulseScale * 1.12)
-                            .opacity(glowOpacity)
-                            .blur(radius: 6)
-                        
-                        Circle()
-                            .fill(limeGreen.opacity(0.04))
-                            .scaleEffect(pulseScale * 1.28)
-                            .opacity(glowOpacity)
-                            .blur(radius: 15)
+                        switch connector.selectedMode {
+                        case .heartbeat:
+                            // Concentric heartbeat ripples centered on button
+                            Circle()
+                                .stroke(limeGreen.opacity(0.08), lineWidth: 2)
+                                .scaleEffect(pulseScale * 1.8)
+                                .blur(radius: 1.5)
+                            
+                            Circle()
+                                .stroke(limeGreen.opacity(0.03), lineWidth: 1)
+                                .scaleEffect(pulseScale * 2.4)
+                                .blur(radius: 3)
+                            
+                            // Soft pulsing ambient glow
+                            Circle()
+                                .fill(limeGreen.opacity(0.04))
+                                .scaleEffect(pulseScale * 1.28)
+                                .opacity(glowOpacity)
+                                .blur(radius: 15)
+                            
+                        case .purr:
+                            // Soft purr humming rings
+                            Circle()
+                                .stroke(limeGreen.opacity(0.06), lineWidth: 30)
+                                .scaleEffect(pulseScale * 1.12)
+                                .opacity(glowOpacity)
+                                .blur(radius: 6)
+                            
+                            Circle()
+                                .fill(limeGreen.opacity(0.03))
+                                .scaleEffect(pulseScale * 1.25)
+                                .opacity(glowOpacity)
+                                .blur(radius: 15)
+                            
+                        case .breath:
+                            // Breath Guide: Expands and contracts in sync with the button
+                            Circle()
+                                .fill(
+                                    RadialGradient(
+                                        colors: [limeGreen.opacity(0.08), Color.clear],
+                                        center: .center,
+                                        startRadius: 0,
+                                        endRadius: 200
+                                    )
+                                )
+                                .scaleEffect(pulseScale)
+                                .blur(radius: 40)
+                            
+                            Circle()
+                                .stroke(limeGreen.opacity(0.12), lineWidth: 1.5)
+                                .scaleEffect(pulseScale)
+                                .blur(radius: 1)
+                        }
                     }
                     
                     // Main Action Circle (Liquid Glass Style)
@@ -695,5 +737,44 @@ struct ContentView: View {
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         ContentView()
+    }
+}
+
+struct FluidBackgroundView: View {
+    // Animation properties for ambient drift
+    @State private var driftOffset1 = CGSize(width: -20, height: -30)
+    @State private var driftOffset2 = CGSize(width: 30, height: 20)
+    
+    // UI Local Colors
+    private let limeGreen = Color(red: 159/255, green: 232/255, blue: 112/255) // #9FE870
+    private let deepGreen = Color(red: 22/255, green: 51/255, blue: 0/255)   // #163300
+    
+    var body: some View {
+        ZStack {
+            // Absolute Pitch Black base
+            Color.black
+                .ignoresSafeArea()
+            
+            // Ambient slow floating blobs
+            ZStack {
+                Circle()
+                    .fill(limeGreen.opacity(0.04))
+                    .frame(width: 350, height: 350)
+                    .offset(driftOffset1)
+                    .blur(radius: 60)
+                
+                Circle()
+                    .fill(deepGreen.opacity(0.18))
+                    .frame(width: 400, height: 400)
+                    .offset(driftOffset2)
+                    .blur(radius: 80)
+            }
+            .onAppear {
+                withAnimation(.easeInOut(duration: 8.0).repeatForever(autoreverses: true)) {
+                    driftOffset1 = CGSize(width: 40, height: 20)
+                    driftOffset2 = CGSize(width: -30, height: -40)
+                }
+            }
+        }
     }
 }
