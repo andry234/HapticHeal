@@ -17,6 +17,10 @@ struct ContentView: View {
     @State private var showProfile = false
     @State private var sessionStartTime: Date? = nil
     @State private var showCompletionToast = false
+    @State private var showStartConfirmation = false
+    @State private var elapsedSeconds: Int = 0
+    @State private var sessionTimer: Timer? = nil
+    
     
     // UI Local Colors
     private let limeGreen = Color(red: 159/255, green: 232/255, blue: 112/255) // #9FE870
@@ -286,6 +290,94 @@ struct ContentView: View {
                 .ignoresSafeArea()
                 .zIndex(99)
             }
+            
+            // Start Session Confirmation Dialog Overlay
+            if showStartConfirmation {
+                ZStack {
+                    // Darken background
+                    Color.black.opacity(0.65)
+                        .ignoresSafeArea()
+                        .transition(.opacity)
+                        .onTapGesture {
+                            withAnimation(.easeOut(duration: 0.2)) {
+                                showStartConfirmation = false
+                            }
+                        }
+                    
+                    // Glassmorphic Dialog Box
+                    VStack(spacing: 20) {
+                        ZStack {
+                            Circle()
+                                .fill(limeGreen.opacity(0.12))
+                                .frame(width: 54, height: 54)
+                            
+                            Image(systemName: "sparkles")
+                                .foregroundColor(limeGreen)
+                                .font(.system(size: 24))
+                        }
+                        
+                        VStack(spacing: 6) {
+                            Text("Avviare la sessione?")
+                                .font(.system(size: 18, weight: .bold, design: .rounded))
+                                .foregroundColor(.white)
+                            
+                            Text("Prenditi un momento per rilassarti. Ti consigliamo di indossare gli auricolari per ascoltare i suoni binaurali rigeneranti.")
+                                .font(.system(size: 13))
+                                .foregroundColor(textGray)
+                                .multilineTextAlignment(.center)
+                                .lineSpacing(3)
+                        }
+                        .padding(.horizontal, 10)
+                        
+                        HStack(spacing: 16) {
+                            Button(action: {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                                    showStartConfirmation = false
+                                }
+                            }) {
+                                Text("Annulla")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 12)
+                                    .background(Color.white.opacity(0.06))
+                                    .cornerRadius(10)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                                    )
+                            }
+                            
+                            Button(action: {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                                    showStartConfirmation = false
+                                    connector.isActive = true
+                                }
+                            }) {
+                                Text("Inizia")
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundColor(.black)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 12)
+                                    .background(limeGreen)
+                                    .cornerRadius(10)
+                            }
+                        }
+                    }
+                    .padding(24)
+                    .frame(width: 300)
+                    .background(Color.black.opacity(0.85))
+                    .background(.ultraThinMaterial)
+                    .cornerRadius(24)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 24)
+                            .stroke(Color.white.opacity(0.12), lineWidth: 1.2)
+                    )
+                    .shadow(color: Color.black.opacity(0.5), radius: 20, x: 0, y: 10)
+                    .transition(.scale(scale: 0.9).combined(with: .opacity))
+                }
+                .zIndex(100)
+            }
         }
         .sheet(isPresented: $showProfile) {
             ProfileView()
@@ -299,9 +391,19 @@ struct ContentView: View {
                 sessionStartTime = Date()
                 haptic.play(connector.selectedMode)
                 startAnimations()
+                
+                // Start active session duration timer
+                elapsedSeconds = 0
+                sessionTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+                    elapsedSeconds += 1
+                }
             } else {
                 haptic.stop()
                 stopAnimations()
+                
+                // Stop active session duration timer
+                sessionTimer?.invalidate()
+                sessionTimer = nil
                 
                 // Track session completion and save stats
                 if let startTime = sessionStartTime {
@@ -347,7 +449,13 @@ struct ContentView: View {
     // MARK: - Controller Actions
     
     private func toggleHaptics() {
-        connector.isActive.toggle()
+        if connector.isActive {
+            connector.isActive = false
+        } else {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                showStartConfirmation = true
+            }
+        }
     }
     
     private func saveCalmSession(duration: Double) {
@@ -362,6 +470,12 @@ struct ContentView: View {
             let currentSessions = UserDefaults.standard.integer(forKey: "calmSessionsThisWeek")
             UserDefaults.standard.set(currentSessions + 1, forKey: "calmSessionsThisWeek")
         }
+    }
+    
+    private func formatTime(_ totalSeconds: Int) -> String {
+        let minutes = totalSeconds / 60
+        let seconds = totalSeconds % 60
+        return String(format: "%02d:%02d", minutes, seconds)
     }
 
     
@@ -640,6 +754,11 @@ struct ContentView: View {
                         .foregroundColor(limeGreen)
                         .shadow(color: limeGreen.opacity(0.4), radius: 4)
                 }
+                
+                Text(formatTime(elapsedSeconds))
+                    .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                    .foregroundColor(.white.opacity(0.8))
+                    .padding(.top, 2)
             } else {
                 Text("TAP TO SOOTHE")
                     .font(.system(size: 10, weight: .semibold, design: .rounded))
