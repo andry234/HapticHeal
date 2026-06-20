@@ -16,6 +16,7 @@ struct ContentView: View {
     @State private var dragX: CGFloat = 160.0
     @State private var showProfile = false
     @State private var sessionStartTime: Date? = nil
+    @State private var showCompletionToast = false
     
     // UI Local Colors
     private let limeGreen = Color(red: 159/255, green: 232/255, blue: 112/255) // #9FE870
@@ -233,6 +234,58 @@ struct ContentView: View {
             
             // Authorization Request Overlay
             authorizationOverlay
+            
+            // Session Completion Toast Overlay
+            if showCompletionToast {
+                VStack {
+                    Spacer()
+                        .frame(height: 50)
+                    
+                    HStack(spacing: 12) {
+                        ZStack {
+                            Circle()
+                                .fill(limeGreen.opacity(0.15))
+                                .frame(width: 38, height: 38)
+                            
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundColor(limeGreen)
+                                .font(.system(size: 20))
+                        }
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Sessione finita! 🎉")
+                                .font(.system(size: 15, weight: .bold, design: .rounded))
+                                .foregroundColor(.white)
+                            Text("Ottimo lavoro per aver completato 5 minuti di calma.")
+                                .font(.system(size: 11))
+                                .foregroundColor(textGray)
+                        }
+                    }
+                    .padding(.vertical, 12)
+                    .padding(.horizontal, 20)
+                    .background(Color.black.opacity(0.85))
+                    .background(.ultraThinMaterial)
+                    .cornerRadius(20)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 20)
+                            .stroke(limeGreen.opacity(0.3), lineWidth: 1.2)
+                    )
+                    .shadow(color: limeGreen.opacity(0.12), radius: 12, x: 0, y: 4)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .onAppear {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 4.0) {
+                            withAnimation(.spring()) {
+                                showCompletionToast = false
+                            }
+                        }
+                    }
+                    
+                    Spacer()
+                }
+                .padding(.horizontal, 30)
+                .ignoresSafeArea()
+                .zIndex(99)
+            }
         }
         .sheet(isPresented: $showProfile) {
             ProfileView()
@@ -254,6 +307,15 @@ struct ContentView: View {
                 if let startTime = sessionStartTime {
                     let duration = Date().timeIntervalSince(startTime)
                     saveCalmSession(duration: duration)
+                    
+                    // Show completion notification if standard session target reached (5 minutes = 300 seconds)
+                    if duration >= 300.0 {
+                        let generator = UINotificationFeedbackGenerator()
+                        generator.notificationOccurred(.success)
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
+                            showCompletionToast = true
+                        }
+                    }
                     sessionStartTime = nil
                 }
             }
