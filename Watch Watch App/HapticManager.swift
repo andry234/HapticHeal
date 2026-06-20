@@ -147,13 +147,13 @@ public class HapticManager: ObservableObject {
             guard let self = self, self.isEngineRunning else { return }
             
             // Lub: First beat (deeper and slightly stronger)
-            let intensity1 = CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.85)
-            let sharpness1 = CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.15)
+            let intensity1 = CHHapticEventParameter(parameterID: .hapticIntensity, value: 1.0)
+            let sharpness1 = CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.20)
             let event1 = CHHapticEvent(eventType: .hapticTransient, parameters: [intensity1, sharpness1], relativeTime: 0.0)
             
             // Dub: Second beat (slightly softer)
-            let intensity2 = CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.70)
-            let sharpness2 = CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.15)
+            let intensity2 = CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.85)
+            let sharpness2 = CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.20)
             let event2 = CHHapticEvent(eventType: .hapticTransient, parameters: [intensity2, sharpness2], relativeTime: 0.28)
             
             do {
@@ -332,7 +332,7 @@ public class HapticManager: ObservableObject {
         case .heartbeat:
             // Loop heartbeat haptic (Lub-dub) every 1 second
             let playWatchHeartbeat = {
-                device.play(.click)
+                device.play(.start)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.28) {
                     device.play(.click)
                 }

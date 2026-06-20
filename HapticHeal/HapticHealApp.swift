@@ -3,6 +3,7 @@ import SwiftUI
 @main
 struct HapticHealApp: App {
     @Environment(\.scenePhase) private var scenePhase
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     
     init() {
         // Initialize Watch Connectivity immediately on launch
@@ -11,7 +12,11 @@ struct HapticHealApp: App {
     
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            if hasCompletedOnboarding {
+                ContentView()
+            } else {
+                OnboardingView()
+            }
         }
         .onChange(of: scenePhase) { newPhase in
             switch newPhase {

@@ -14,6 +14,7 @@ struct ContentView: View {
     @State private var breathPhaseText: String = "INHALE"
     @State private var isPressingNavBar: Bool = false
     @State private var dragX: CGFloat = 160.0
+    @State private var showProfile = false
     
     // UI Local Colors
     private let limeGreen = Color(red: 159/255, green: 232/255, blue: 112/255) // #9FE870
@@ -27,22 +28,46 @@ struct ContentView: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 40) {
-                // Top Header
-                VStack(spacing: 8) {
-                    Text("HAPTICHEAL")
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
-                        .kerning(6)
-                        .foregroundColor(.white)
+                // Top Header Row
+                HStack {
+                    // Spacer of size 44 for visual symmetry with the profile button
+                    Spacer()
+                        .frame(width: 44)
                     
-                    HStack(spacing: 8) {
-                        Circle()
-                            .fill(connector.isConnected ? limeGreen : textGray)
-                            .frame(width: 8, height: 8)
-                        Text(connector.isConnected ? "Watch Sync Active" : "Searching Watch...")
-                            .font(.system(size: 12, weight: .medium, design: .monospaced))
-                            .foregroundColor(textGray)
+                    Spacer()
+                    
+                    VStack(spacing: 8) {
+                        Text("HAPTICHEAL")
+                            .font(.system(size: 24, weight: .bold, design: .rounded))
+                            .kerning(6)
+                            .foregroundColor(.white)
+                        
+                        HStack(spacing: 8) {
+                            Circle()
+                                .fill(connector.isConnected ? limeGreen : textGray)
+                                .frame(width: 8, height: 8)
+                            Text(connector.isConnected ? "Watch Sync Active" : "Searching Watch...")
+                                .font(.system(size: 12, weight: .medium, design: .monospaced))
+                                .foregroundColor(textGray)
+                        }
+                    }
+                    
+                    Spacer()
+                    
+                    // Profile Button (Liquid Glass Style)
+                    Button(action: {
+                        showProfile = true
+                    }) {
+                        Image(systemName: "person.crop.circle")
+                            .font(.system(size: 22, weight: .light))
+                            .foregroundColor(.white.opacity(0.85))
+                            .frame(width: 44, height: 44)
+                            .background(Circle().fill(Color.white.opacity(0.04)))
+                            .overlay(Circle().stroke(Color.white.opacity(0.08), lineWidth: 1))
+                            .shadow(color: Color.black.opacity(0.2), radius: 4)
                     }
                 }
+                .padding(.horizontal, 20)
                 .padding(.top, 20)
                 
                 // Real-time Biometrics Display
@@ -199,6 +224,12 @@ struct ContentView: View {
             // Authorization Request Overlay
             authorizationOverlay
         }
+        .sheet(isPresented: $showProfile) {
+            ProfileView()
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+                .presentationBackground(.ultraThinMaterial)
+        }
         .preferredColorScheme(.dark)
         .onChange(of: connector.isActive) { newActive in
             if newActive {
@@ -222,6 +253,13 @@ struct ContentView: View {
                 monitor.startMonitoring()
             }
             connector.activate()
+            
+            // Apply pre-selected soothing mode from onboarding
+            if let savedModeRaw = UserDefaults.standard.value(forKey: "preferredSoothingMode") as? Int,
+               let savedMode = HapticMode(rawValue: savedModeRaw) {
+                connector.selectedMode = savedMode
+            }
+            
             dragX = xCenter(for: connector.selectedMode)
         }
     }
@@ -775,6 +813,178 @@ struct FluidBackgroundView: View {
                     driftOffset2 = CGSize(width: -30, height: -40)
                 }
             }
+        }
+    }
+}
+
+struct ProfileView: View {
+    @Environment(\.dismiss) private var dismiss
+    
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    @AppStorage("stressFrequency") private var stressFrequency = ""
+    @AppStorage("primaryStressSymptom") private var primaryStressSymptom = ""
+    @AppStorage("preferredSoothingMode") private var preferredSoothingMode = 0
+    
+    // UI Local Colors
+    private let limeGreen = Color(red: 159/255, green: 232/255, blue: 112/255)
+    private let deepGreen = Color(red: 22/255, green: 51/255, blue: 0/255)
+    private let textGray = Color(red: 0.6, green: 0.6, blue: 0.6)
+    
+    var body: some View {
+        VStack(spacing: 24) {
+            // Header
+            VStack(spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill(LinearGradient(colors: [limeGreen.opacity(0.2), deepGreen.opacity(0.4)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                        .frame(width: 76, height: 76)
+                        .overlay(
+                            Circle()
+                                .stroke(limeGreen.opacity(0.4), lineWidth: 1.5)
+                        )
+                        .shadow(color: limeGreen.opacity(0.15), radius: 10)
+                    
+                    Image(systemName: "person.fill")
+                        .font(.system(size: 32, weight: .light))
+                        .foregroundColor(limeGreen)
+                }
+                
+                VStack(spacing: 4) {
+                    Text("Bio-Profilo")
+                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                    
+                    Text("Configurazione biometrica HapticHeal")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(textGray)
+                }
+            }
+            .padding(.top, 20)
+            
+            // Profile Card (Unified Liquid Glass style container)
+            VStack(spacing: 20) {
+                profileRow(icon: "waveform", title: "Frequenza dello Stress", value: formattedFrequency)
+                
+                Divider().background(Color.white.opacity(0.08))
+                
+                profileRow(icon: "exclamationmark.triangle", title: "Sintomo Principale", value: formattedSymptom)
+                
+                Divider().background(Color.white.opacity(0.08))
+                
+                // Default Mode Selector (unified within the same card)
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("MODALITÀ DI SOLLIEVO PREFERITA")
+                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .kerning(1.5)
+                        .foregroundColor(textGray)
+                        .padding(.horizontal, 4)
+                    
+                    Picker("Default Mode", selection: $preferredSoothingMode) {
+                        Text("Battito").tag(0)
+                        Text("Fusa").tag(1)
+                        Text("Respiro").tag(2)
+                    }
+                    .pickerStyle(SegmentedPickerStyle())
+                    .onChange(of: preferredSoothingMode) { newModeRaw in
+                        if let newMode = HapticMode(rawValue: newModeRaw) {
+                            WatchConnector.shared.selectedMode = newMode
+                        }
+                    }
+                }
+            }
+            .padding()
+            .background(RoundedRectangle(cornerRadius: 16).fill(Color.white.opacity(0.03)))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.white.opacity(0.06), lineWidth: 1.2)
+            )
+            .padding(.horizontal, 24)
+            
+            Spacer()
+            
+            // App Management Actions
+            VStack(spacing: 12) {
+                Button(action: {
+                    // Reset onboarding and dismiss
+                    stressFrequency = ""
+                    primaryStressSymptom = ""
+                    hasCompletedOnboarding = false
+                    dismiss()
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "arrow.counterclockwise.circle.fill")
+                        Text("Resetta Onboarding")
+                    }
+                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .foregroundColor(.red.opacity(0.85))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(RoundedRectangle(cornerRadius: 12).fill(Color.red.opacity(0.08)))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.red.opacity(0.20), lineWidth: 1)
+                    )
+                }
+                .padding(.horizontal, 24)
+                
+                Button(action: {
+                    dismiss()
+                }) {
+                    Text("Chiudi")
+                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                        .foregroundColor(.black)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(limeGreen)
+                        .cornerRadius(12)
+                }
+                .padding(.horizontal, 24)
+            }
+            .padding(.bottom, 24)
+        }
+        .preferredColorScheme(.dark)
+    }
+    
+    // MARK: - Formatters
+    
+    private var formattedFrequency: String {
+        switch stressFrequency {
+        case "rarely": return "Raramente"
+        case "occasionally": return "Occasionalmente"
+        case "frequently": return "Frequentemente"
+        case "constantly": return "Costantemente"
+        default: return "Non specificato"
+        }
+    }
+    
+    private var formattedSymptom: String {
+        switch primaryStressSymptom {
+        case "heartbeat": return "Battito Accelerato"
+        case "breath": return "Respiro Affannoso"
+        case "jitter": return "Tensione Fisica"
+        case "mind": return "Mente Sovraccarica"
+        default: return "Non specificato"
+        }
+    }
+    
+    @ViewBuilder
+    private func profileRow(icon: String, title: String, value: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 16))
+                .foregroundColor(limeGreen)
+                .frame(width: 32, height: 32)
+                .background(Circle().fill(limeGreen.opacity(0.08)))
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(textGray)
+                Text(value)
+                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+            }
+            Spacer()
         }
     }
 }
