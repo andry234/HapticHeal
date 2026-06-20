@@ -413,10 +413,12 @@ struct ContentView: View {
                 // Track session completion and save stats
                 if let startTime = sessionStartTime {
                     let duration = Date().timeIntervalSince(startTime)
-                    saveCalmSession(duration: duration)
+                    let completed = (remainingSeconds == 0) || (duration >= 298.0)
                     
-                    // Show completion notification if standard session target reached (5 minutes = 300 seconds)
-                    if duration >= 300.0 {
+                    saveCalmSession(duration: completed ? 300.0 : duration)
+                    
+                    // Show completion notification if completed
+                    if completed {
                         let generator = UINotificationFeedbackGenerator()
                         generator.notificationOccurred(.success)
                         withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
