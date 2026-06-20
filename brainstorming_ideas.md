@@ -41,3 +41,12 @@ This document archives ideas for future features and expansions of the HapticHea
 ### Live Activities & Dynamic Island
 - **Concept**: When a soothing exercise is active in the background, display a pulsing breathing timer or soothing indicator in the Dynamic Island and on the lock screen.
 - **Implementation**: iOS ActivityKit.
+
+---
+
+## 4. User Experience & Sensory Pacing 👁️
+
+### Visual Timer & Calm Progress Indicator
+- **Concept**: A non-intrusive, elegant timer or visual ring that indicates the progression toward the 5-minute standard recommended session threshold. This helps users pace their sessions without checking the clock, reinforcing mindfulness.
+- **Implementation**: A smooth glassmorphic progress arc framing the central button or a glowing digital timer that appears only when the user taps to soothe, fading out gently when completed.
+

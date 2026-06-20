@@ -289,15 +289,19 @@ struct ContentView: View {
     }
     
     private func saveCalmSession(duration: Double) {
-        guard duration >= 1.0 else { return } // Ignore micro sessions
+        guard duration >= 1.0 else { return } // Ignore micro sessions of less than 1 second
         let minutes = duration / 60.0
         
         let currentTotal = UserDefaults.standard.double(forKey: "calmMinutesTotal")
         UserDefaults.standard.set(currentTotal + minutes, forKey: "calmMinutesTotal")
         
-        let currentSessions = UserDefaults.standard.integer(forKey: "calmSessionsThisWeek")
-        UserDefaults.standard.set(currentSessions + 1, forKey: "calmSessionsThisWeek")
+        // Count as completed session only if it meets the clinical standard (5 minutes = 300 seconds)
+        if duration >= 300.0 {
+            let currentSessions = UserDefaults.standard.integer(forKey: "calmSessionsThisWeek")
+            UserDefaults.standard.set(currentSessions + 1, forKey: "calmSessionsThisWeek")
+        }
     }
+
     
     private func xCenter(for mode: HapticMode) -> CGFloat {
         let itemWidth: CGFloat = 320.0 / 3.0
