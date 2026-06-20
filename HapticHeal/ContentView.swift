@@ -18,7 +18,7 @@ struct ContentView: View {
     @State private var sessionStartTime: Date? = nil
     @State private var showCompletionToast = false
     @State private var showStartConfirmation = false
-    @State private var elapsedSeconds: Int = 0
+    @State private var remainingSeconds: Int = 300
     @State private var sessionTimer: Timer? = nil
     
     
@@ -392,10 +392,15 @@ struct ContentView: View {
                 haptic.play(connector.selectedMode)
                 startAnimations()
                 
-                // Start active session duration timer
-                elapsedSeconds = 0
+                // Start active session countdown timer (5 minutes = 300 seconds)
+                remainingSeconds = 300
                 sessionTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-                    elapsedSeconds += 1
+                    if remainingSeconds > 0 {
+                        remainingSeconds -= 1
+                    }
+                    if remainingSeconds == 0 {
+                        connector.isActive = false
+                    }
                 }
             } else {
                 haptic.stop()
@@ -755,7 +760,7 @@ struct ContentView: View {
                         .shadow(color: limeGreen.opacity(0.4), radius: 4)
                 }
                 
-                Text(formatTime(elapsedSeconds))
+                Text(formatTime(remainingSeconds))
                     .font(.system(size: 13, weight: .semibold, design: .monospaced))
                     .foregroundColor(.white.opacity(0.8))
                     .padding(.top, 2)
