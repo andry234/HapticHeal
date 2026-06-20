@@ -290,11 +290,11 @@ struct OnboardingView: View {
             ZStack {
                 Circle()
                     .fill(limeGreen.opacity(0.08))
-                    .frame(width: 120, height: 120)
+                    .frame(width: 100, height: 100)
                     .blur(radius: 10)
                 
                 Image(systemName: "sparkles")
-                    .font(.system(size: 64, weight: .ultraLight))
+                    .font(.system(size: 54, weight: .ultraLight))
                     .foregroundColor(limeGreen)
                     .shadow(color: limeGreen.opacity(0.5), radius: 15)
             }
@@ -303,12 +303,28 @@ struct OnboardingView: View {
                 .font(.system(size: 26, weight: .bold, design: .rounded))
                 .foregroundColor(.white)
             
-            Text("Il tuo percorso personalizzato per gestire lo stress attraverso la bio-sintonizzazione tattile è pronto.")
+            Text("Il tuo percorso personalizzato per gestire lo stress attraverso la sintonizzazione aptica ed acustica è pronto.")
                 .font(.system(size: 14, weight: .medium, design: .rounded))
                 .foregroundColor(textGray)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
                 .lineSpacing(3)
+            
+            VStack(alignment: .leading, spacing: 14) {
+                onboardingGuideRow(
+                    icon: "hand.tap.fill",
+                    title: "Avvia le sessioni",
+                    description: "Tocca il grande pulsante centrale nella schermata principale per iniziare o fermare la sintonizzazione."
+                )
+                
+                onboardingGuideRow(
+                    icon: "headphones",
+                    title: "Suoni terapeutici (consigliati auricolari)",
+                    description: "L'app riproduce toni binaurali a 6Hz ed onde Theta in tempo reale per amplificare l'efficacia delle vibrazioni."
+                )
+            }
+            .padding(.horizontal, 30)
+            .padding(.top, 8)
         }
     }
     
@@ -493,4 +509,27 @@ struct OnboardingView: View {
             }
         }
     }
+    
+    @ViewBuilder
+    private func onboardingGuideRow(icon: String, title: String, description: String) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 14))
+                .foregroundColor(limeGreen)
+                .frame(width: 24, height: 24)
+                .background(limeGreen.opacity(0.1))
+                .clipShape(Circle())
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+                Text(description)
+                    .font(.system(size: 11))
+                    .foregroundColor(textGray)
+                    .lineSpacing(2)
+            }
+        }
+    }
 }
+

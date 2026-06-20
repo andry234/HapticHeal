@@ -868,8 +868,9 @@ struct ProfileView: View {
     private let textGray = Color(red: 0.6, green: 0.6, blue: 0.6)
     
     var body: some View {
-        VStack(spacing: 24) {
-            // Header
+        ScrollView {
+            VStack(spacing: 24) {
+                // Header
             VStack(spacing: 12) {
                 ZStack {
                     Circle()
@@ -1019,7 +1020,37 @@ struct ProfileView: View {
             )
             .padding(.horizontal, 24)
             
-            Spacer()
+            // Sensory Guide Card (Liquid Glass style container)
+            VStack(alignment: .leading, spacing: 14) {
+                Text("GUIDA SENSORIALE & AUDIO")
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .kerning(1.5)
+                    .foregroundColor(textGray)
+                    .padding(.horizontal, 4)
+                
+                VStack(alignment: .leading, spacing: 12) {
+                    guideRow(
+                        icon: "hand.tap.fill",
+                        title: "Avviare una Sessione",
+                        description: "Nel pannello principale, seleziona una modalità nella barra in basso e tocca il grande pulsante centrale per avviare o fermare la sintonizzazione."
+                    )
+                    
+                    Divider().background(Color.white.opacity(0.08))
+                    
+                    guideRow(
+                        icon: "headphones",
+                        title: "Suoni Terapeutici Coerenti",
+                        description: "Indossa le cuffie: HapticHeal sintetizza toni binaurali a 6Hz (onde Theta) e risonanze fusa in tempo reale per amplificare l'efficacia delle vibrazioni."
+                    )
+                }
+            }
+            .padding()
+            .background(RoundedRectangle(cornerRadius: 16).fill(Color.white.opacity(0.03)))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.white.opacity(0.06), lineWidth: 1.2)
+            )
+            .padding(.horizontal, 24)
             
             // App Management Actions
             VStack(spacing: 12) {
@@ -1062,7 +1093,9 @@ struct ProfileView: View {
                 .padding(.horizontal, 24)
             }
             .padding(.bottom, 24)
-        }
+            }
+            .padding(.vertical, 20)
+        } // Closes ScrollView
         .preferredColorScheme(.dark)
         .sheet(isPresented: $showCalmInfo) {
             CalmInfoView()
@@ -1109,6 +1142,29 @@ struct ProfileView: View {
                 Text(value)
                     .font(.system(size: 15, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
+            }
+            Spacer()
+        }
+    }
+    
+    @ViewBuilder
+    private func guideRow(icon: String, title: String, description: String) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 14))
+                .foregroundColor(limeGreen)
+                .frame(width: 28, height: 28)
+                .background(Circle().fill(limeGreen.opacity(0.08)))
+                .padding(.top, 2)
+            
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+                Text(description)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(textGray)
+                    .lineSpacing(2)
             }
             Spacer()
         }
