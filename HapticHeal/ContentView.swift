@@ -860,6 +860,8 @@ struct ProfileView: View {
     @AppStorage("calmMinutesTotal") private var totalCalmMinutes = 0.0
     @AppStorage("calmSessionsThisWeek") private var sessionsThisWeek = 0
     
+    @State private var showCalmInfo = false
+    
     // UI Local Colors
     private let limeGreen = Color(red: 159/255, green: 232/255, blue: 112/255)
     private let deepGreen = Color(red: 22/255, green: 51/255, blue: 0/255)
@@ -937,11 +939,21 @@ struct ProfileView: View {
             
             // Statistics Card (Liquid Glass style container)
             VStack(alignment: .leading, spacing: 14) {
-                Text("STATISTICHE DI CALMA")
-                    .font(.system(size: 10, weight: .bold, design: .rounded))
-                    .kerning(1.5)
-                    .foregroundColor(textGray)
-                    .padding(.horizontal, 4)
+                HStack(spacing: 6) {
+                    Text("STATISTICHE DI CALMA")
+                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .kerning(1.5)
+                        .foregroundColor(textGray)
+                    
+                    Button(action: {
+                        showCalmInfo = true
+                    }) {
+                        Image(systemName: "info.circle")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(limeGreen)
+                    }
+                }
+                .padding(.horizontal, 4)
                 
                 HStack(spacing: 20) {
                     VStack(alignment: .leading, spacing: 4) {
@@ -992,11 +1004,10 @@ struct ProfileView: View {
                     }
                     .frame(height: 8)
                     
-                    Text("Nota: solo le sessioni di almeno 5 minuti (durata standard per l'efficacia biologica) incrementano l'obiettivo. Le sessioni più brevi accumulano comunque minuti totali di calma.")
-                        .font(.system(size: 10))
-                        .foregroundColor(textGray.opacity(0.8))
-                        .lineSpacing(3)
-                        .padding(.top, 6)
+                    Text("* Solo le sessioni di almeno 5 minuti incrementano l'obiettivo. Tocca l'icona info per saperne di più.")
+                        .font(.system(size: 9))
+                        .foregroundColor(textGray.opacity(0.75))
+                        .padding(.top, 4)
                 }
                 .padding(.top, 4)
             }
@@ -1053,6 +1064,11 @@ struct ProfileView: View {
             .padding(.bottom, 24)
         }
         .preferredColorScheme(.dark)
+        .sheet(isPresented: $showCalmInfo) {
+            CalmInfoView()
+                .presentationDetents([.medium])
+                .presentationBackground(.ultraThinMaterial)
+        }
     }
     
     // MARK: - Formatters
@@ -1096,5 +1112,84 @@ struct ProfileView: View {
             }
             Spacer()
         }
+    }
+}
+
+struct CalmInfoView: View {
+    @Environment(\.dismiss) private var dismiss
+    
+    // UI Local Colors
+    private let limeGreen = Color(red: 159/255, green: 232/255, blue: 112/255)
+    private let deepGreen = Color(red: 22/255, green: 51/255, blue: 0/255)
+    private let textGray = Color(red: 0.6, green: 0.6, blue: 0.6)
+    
+    var body: some View {
+        VStack(spacing: 24) {
+            // Header
+            VStack(spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill(LinearGradient(colors: [limeGreen.opacity(0.15), deepGreen.opacity(0.35)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                        .frame(width: 64, height: 64)
+                        .overlay(
+                            Circle()
+                                .stroke(limeGreen.opacity(0.3), lineWidth: 1)
+                        )
+                    
+                    Image(systemName: "clock.badge.checkmark")
+                        .font(.system(size: 26, weight: .light))
+                        .foregroundColor(limeGreen)
+                }
+                .padding(.top, 24)
+                
+                Text("Perché 5 minuti?")
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+            }
+            
+            // Content
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("Efficacia Biologica")
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .foregroundColor(limeGreen)
+                        .kerning(1)
+                    
+                    Text("Gli studi clinici dimostrano che per stimolare efficacemente il nervo vago e attivare la risposta di rilassamento del sistema nervoso parasimpatico (riducendo il cortisolo e il battito cardiaco), sono necessari almeno 5 minuti continui di respirazione controllata o stimolazione aptica.")
+                        .font(.system(size: 14))
+                        .foregroundColor(.white.opacity(0.85))
+                        .lineSpacing(4)
+                    
+                    Divider().background(Color.white.opacity(0.08))
+                    
+                    Text("Come funziona il tracciamento?")
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .foregroundColor(limeGreen)
+                        .kerning(1)
+                    
+                    Text("• Le sessioni inferiori a 5 minuti vengono comunque sommate nel tuo tempo totale di calma (per non perdere alcun progresso).\n• Solo le sessioni che superano la soglia dei 5 minuti incrementano il contatore dell'obiettivo settimanale (7 sessioni).")
+                        .font(.system(size: 14))
+                        .foregroundColor(.white.opacity(0.85))
+                        .lineSpacing(4)
+                }
+                .padding(.horizontal, 24)
+            }
+            
+            Button(action: {
+                dismiss()
+            }) {
+                Text("Ho Capito")
+                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .foregroundColor(.black)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(limeGreen)
+                    .cornerRadius(12)
+            }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 24)
+        }
+        .presentationDragIndicator(.visible)
+        .preferredColorScheme(.dark)
     }
 }
