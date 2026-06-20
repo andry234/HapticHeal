@@ -15,6 +15,7 @@ struct ContentView: View {
     @State private var isPressingNavBar: Bool = false
     @State private var dragX: CGFloat = 160.0
     @State private var showProfile = false
+    @State private var sessionStartTime: Date? = nil
     
     // UI Local Colors
     private let limeGreen = Color(red: 159/255, green: 232/255, blue: 112/255) // #9FE870
@@ -26,6 +27,15 @@ struct ContentView: View {
             // Dynamic Fluid Background Canvas to minimize visual overstimulation
             FluidBackgroundView()
                 .ignoresSafeArea()
+            
+            // Bioluminescent Breath Glow Layer
+            if connector.isActive && connector.selectedMode == .breath {
+                limeGreen
+                    .opacity(Double(pulseScale - 1.0) * 0.4) // scales between 0% and 10% opacity
+                    .ignoresSafeArea()
+                    .blur(radius: 60)
+                    .animation(.easeInOut(duration: 0.3), value: pulseScale)
+            }
             
             VStack(spacing: 40) {
                 // Top Header Row
@@ -233,11 +243,19 @@ struct ContentView: View {
         .preferredColorScheme(.dark)
         .onChange(of: connector.isActive) { newActive in
             if newActive {
+                sessionStartTime = Date()
                 haptic.play(connector.selectedMode)
                 startAnimations()
             } else {
                 haptic.stop()
                 stopAnimations()
+                
+                // Track session completion and save stats
+                if let startTime = sessionStartTime {
+                    let duration = Date().timeIntervalSince(startTime)
+                    saveCalmSession(duration: duration)
+                    sessionStartTime = nil
+                }
             }
         }
         .onChange(of: connector.selectedMode) { newMode in
@@ -268,6 +286,17 @@ struct ContentView: View {
     
     private func toggleHaptics() {
         connector.isActive.toggle()
+    }
+    
+    private func saveCalmSession(duration: Double) {
+        guard duration >= 1.0 else { return } // Ignore micro sessions
+        let minutes = duration / 60.0
+        
+        let currentTotal = UserDefaults.standard.double(forKey: "calmMinutesTotal")
+        UserDefaults.standard.set(currentTotal + minutes, forKey: "calmMinutesTotal")
+        
+        let currentSessions = UserDefaults.standard.integer(forKey: "calmSessionsThisWeek")
+        UserDefaults.standard.set(currentSessions + 1, forKey: "calmSessionsThisWeek")
     }
     
     private func xCenter(for mode: HapticMode) -> CGFloat {
@@ -824,6 +853,8 @@ struct ProfileView: View {
     @AppStorage("stressFrequency") private var stressFrequency = ""
     @AppStorage("primaryStressSymptom") private var primaryStressSymptom = ""
     @AppStorage("preferredSoothingMode") private var preferredSoothingMode = 0
+    @AppStorage("calmMinutesTotal") private var totalCalmMinutes = 0.0
+    @AppStorage("calmSessionsThisWeek") private var sessionsThisWeek = 0
     
     // UI Local Colors
     private let limeGreen = Color(red: 159/255, green: 232/255, blue: 112/255)
@@ -900,14 +931,83 @@ struct ProfileView: View {
             )
             .padding(.horizontal, 24)
             
+            // Statistics Card (Liquid Glass style container)
+            VStack(alignment: .leading, spacing: 14) {
+                Text("STATISTICHE DI CALMA")
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .kerning(1.5)
+                    .foregroundColor(textGray)
+                    .padding(.horizontal, 4)
+                
+                HStack(spacing: 20) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Tempo Totale")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(textGray)
+                        Text(String(format: "%.1f min", totalCalmMinutes))
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .foregroundColor(limeGreen)
+                    }
+                    
+                    Divider().background(Color.white.opacity(0.08))
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Sessioni (Settimana)")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(textGray)
+                        Text("\(sessionsThisWeek) completate")
+                            .font(.system(size: 18, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                    }
+                }
+                
+                // Visual progress bar toward weekly goal (e.g. goal = 7 sessions)
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Text("Obiettivo Settimanale")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(textGray)
+                        Spacer()
+                        Text("\(sessionsThisWeek)/7 sessioni")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(limeGreen)
+                    }
+                    
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            Capsule()
+                                .fill(Color.white.opacity(0.08))
+                                .frame(height: 8)
+                            
+                            Capsule()
+                                .fill(
+                                    LinearGradient(colors: [limeGreen, deepGreen], startPoint: .leading, endPoint: .trailing)
+                                )
+                                .frame(width: geo.size.width * CGFloat(min(1.0, Double(sessionsThisWeek) / 7.0)), height: 8)
+                        }
+                    }
+                    .frame(height: 8)
+                }
+                .padding(.top, 4)
+            }
+            .padding()
+            .background(RoundedRectangle(cornerRadius: 16).fill(Color.white.opacity(0.03)))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.white.opacity(0.06), lineWidth: 1.2)
+            )
+            .padding(.horizontal, 24)
+            
             Spacer()
             
             // App Management Actions
             VStack(spacing: 12) {
                 Button(action: {
-                    // Reset onboarding and dismiss
+                    // Reset onboarding, stats and dismiss
                     stressFrequency = ""
                     primaryStressSymptom = ""
+                    totalCalmMinutes = 0.0
+                    sessionsThisWeek = 0
                     hasCompletedOnboarding = false
                     dismiss()
                 }) {

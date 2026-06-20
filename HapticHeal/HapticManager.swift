@@ -93,6 +93,10 @@ public class HapticManager: ObservableObject {
             case .breath:
                 playBreathGuidePattern()
             }
+            
+            // Trigger synthesized audio soundscapes synchronized with haptics
+            SoundManager.shared.play(mode)
+            
             return
         }
         #endif
@@ -106,6 +110,9 @@ public class HapticManager: ObservableObject {
         timer = nil
         
         #if !os(watchOS)
+        // Stop audio playback
+        SoundManager.shared.stop()
+        
         do {
             try hapticPlayer?.stop(atTime: CHHapticTimeImmediate)
             try breathPlayer?.stop(atTime: CHHapticTimeImmediate)
