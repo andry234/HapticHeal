@@ -991,6 +991,12 @@ struct ProfileView: View {
                         }
                     }
                     .frame(height: 8)
+                    
+                    Text("Nota: solo le sessioni di almeno 5 minuti (durata standard per l'efficacia biologica) incrementano l'obiettivo. Le sessioni più brevi accumulano comunque minuti totali di calma.")
+                        .font(.system(size: 10))
+                        .foregroundColor(textGray.opacity(0.8))
+                        .lineSpacing(3)
+                        .padding(.top, 6)
                 }
                 .padding(.top, 4)
             }
